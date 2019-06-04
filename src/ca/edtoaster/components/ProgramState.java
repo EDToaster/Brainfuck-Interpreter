@@ -14,19 +14,19 @@ public class ProgramState {
     private int ptr;
     private int programPtr;
     private byte[] buf;
-    private Program.Instruction[] instructions;
+    private Program program;
 
     private Stack<Integer> loopStack;
 
     private ProgramState() {}
 
-    public static ProgramState defaultState(Program.Instruction[] instructions) {
+    public static ProgramState defaultState(Program program) {
         ProgramState state = new ProgramState();
         state.ptr = 0;
         state.programPtr = 0;
         state.buf = new byte[INFINITELY_LARGE_SIZE];
         state.loopStack = new Stack<>();
-        state.instructions = instructions;
+        state.program = program;
         return state;
     }
 
@@ -92,30 +92,12 @@ public class ProgramState {
     }
 
     public ProgramState startLoop() {
-        int counter = 0;
-
-        int tmpPtr;
-
-        for (tmpPtr = this.programPtr;; tmpPtr++) {
-            Program.Instruction instruction = instructions[tmpPtr];
-            if (instruction == Program.Instruction.JMP_FOR) counter++;
-            else if (instruction == Program.Instruction.JMP_BAK) {
-                counter--;
-                if (counter == 0) {
-                    break;
-                }
-            }
-        }
-
-        if (buf[ptr] == 0) programPtr = tmpPtr;
-        else loopStack.push(programPtr);
-
+        if (buf[ptr] == 0) programPtr = program.getClosing(programPtr);
         return this;
     }
 
     public ProgramState stopLoop() {
-        programPtr = loopStack.pop() - 1;
-
+        if (buf[ptr] != 0) programPtr = program.getOpening(programPtr);
         return this;
     }
 
@@ -125,7 +107,7 @@ public class ProgramState {
     }
 
     public Program.Instruction currentInstruction() {
-        if (programPtr < 0 || programPtr >= instructions.length) return null;
-        else return instructions[programPtr];
+        if (programPtr < 0 || programPtr >= program.getLength()) return null;
+        else return program.getInstruction(programPtr);
     }
 }

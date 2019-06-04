@@ -12,7 +12,6 @@ public class Main {
 
         if (args.length > 0) {
             String file = args[0];
-            System.err.println(file);
             inputStream = new FileInputStream(file);
         } else {
             inputStream = System.in;

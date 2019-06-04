@@ -34,7 +34,6 @@ public class Source {
         }
 
         String fullSource = SourceUtils.stripNonConformingCharacters(fullSourceBuilder.toString());
-        System.out.println(fullSource);
         return new Source(fullSource);
     }
 

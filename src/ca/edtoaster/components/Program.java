@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 public class Program {
     protected enum Instruction {
@@ -78,23 +79,40 @@ public class Program {
 
     private Source source;
     private Instruction[] instructions;
+    private Map<Integer, Integer> forwardMap, backMap;
+
     private boolean compiled;
 
     private Program(Source source) {
         this.source = source;
         this.compiled = false;
+        this.forwardMap = new HashMap<>();
+        this.backMap = new HashMap<>();
     }
 
     private Program compile() {
         this.instructions = source.stream()
                 .map(Instruction::get)
                 .toArray(Instruction[]::new);
+
+        // calculate bounds.
+        Stack<Integer> stack = new Stack<>();
+        for(int i = 0; i < instructions.length; i++) {
+            if (instructions[i] == Instruction.JMP_FOR) {
+                stack.push(i);
+            } else if (instructions[i] == Instruction.JMP_BAK) {
+                int forward = stack.pop();
+                forwardMap.put(forward, i);
+                backMap.put(i, forward);
+            }
+        }
+
         this.compiled = true;
         return this;
     }
 
     public void execute() {
-        ProgramState state = ProgramState.defaultState(instructions);
+        ProgramState state = ProgramState.defaultState(this);
 
         Instruction currentInstruction;
 
@@ -102,6 +120,22 @@ public class Program {
             currentInstruction.next(state);
             state.incrementProgramCounter();
         }
+    }
+
+    public int getLength() {
+        return instructions.length;
+    }
+
+    public Instruction getInstruction(int index) {
+        return instructions[index];
+    }
+
+    public int getClosing(int starting) {
+        return forwardMap.getOrDefault(starting, 0);
+    }
+
+    public int getOpening(int closing) {
+        return backMap.getOrDefault(closing, 0);
     }
 
 
